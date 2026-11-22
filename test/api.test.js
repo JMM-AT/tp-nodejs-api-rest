@@ -48,10 +48,10 @@ function request(method, path, body = null) {
  */
 function assert(condition, message) {
   if (condition) {
-    console.log(`  ✓ ${message}`);
+    console.log(`  [OK] ${message}`);
     passed++;
   } else {
-    console.log(`  ✗ ${message}`);
+    console.log(`  [KO] ${message}`);
     failed++;
   }
 }
@@ -68,7 +68,7 @@ async function runTests() {
     assert(Array.isArray(posts), 'Le corps est un tableau');
     assert(posts.length > 0, `Le tableau contient des posts (${posts.length} trouvés)`);
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -89,7 +89,7 @@ async function runTests() {
     assert(post.id === testId, `L'ID correspond (${post.id} === ${testId})`);
     assert(typeof post.title === 'string', 'Le post a un titre');
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -99,7 +99,7 @@ async function runTests() {
     const res = await request('GET', '/api/posts/999999');
     assert(res.statusCode === 404, `Status 404 (reçu ${res.statusCode})`);
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -117,7 +117,7 @@ async function runTests() {
     assert(created.title === 'Post de test', 'Le titre est correct');
     createdId = created.id;
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -132,7 +132,7 @@ async function runTests() {
     assert(res.statusCode === 200, `Status 200 (reçu ${res.statusCode})`);
     assert(updated.title === 'Titre modifié', 'Le titre a été modifié');
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -145,7 +145,7 @@ async function runTests() {
     });
     assert(res.statusCode === 404, `Status 404 (reçu ${res.statusCode})`);
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -155,7 +155,7 @@ async function runTests() {
     const res = await request('POST', '', { title: 'Sans body' });
     assert(res.statusCode === 400, `Status 400 (reçu ${res.statusCode})`);
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -165,7 +165,7 @@ async function runTests() {
     const res = await request('DELETE', `/api/posts/${createdId}`);
     assert(res.statusCode === 200, `Status 200 (reçu ${res.statusCode})`);
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
@@ -175,7 +175,7 @@ async function runTests() {
     const res = await request('DELETE', `/api/posts/${createdId}`);
     assert(res.statusCode === 404, `Status 404 (reçu ${res.statusCode})`);
   } catch (err) {
-    console.log(`  ✗ Erreur : ${err.message}`);
+    console.log(`  [KO] Erreur : ${err.message}`);
     failed++;
   }
 
