@@ -1,0 +1,18 @@
+{
+  "name": "tp-nodejs-api-rest",
+  "version": "1.0.0",
+  "description": "TP Node.js - Création d'une API REST",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "keywords": [
+    "nodejs",
+    "rest",
+    "api",
+    "tp"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP Node.js - Client API REST</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #f5f7fa;
+      color: #222;
+    }
+    h1 { text-align: center; margin-bottom: 30px; color: #1a73e8; }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+    label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: #155ab3; }
+    button.secondary { background: #6c757d; }
+    button.secondary:hover { background: #545b62; }
+    button.danger { background: #dc3545; }
+    button.danger:hover { background: #b52c37; }
+    ul#postsList { list-style: none; padding: 0; margin: 0; }
+    li.post-item {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .post-title { font-weight: 700; font-size: 18px; }
+    .post-body { color: #555; font-size: 14px; line-height: 1.5; }
+    .post-meta { font-size: 12px; color: #888; margin-top: 6px; }
+    .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .form-group { margin-bottom: 16px; }
+    #message {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      display: none;
+      font-size: 14px;
+    }
+    #message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
+    #message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
+    .edit-form { display: none; margin-top: 12px; padding: 12px; border: 1px dashed #ccc; border-radius: 6px; background: #fafafa; }
+  </style>
+</head>
+<body>
+
+  <h1>Client API REST - Posts</h1>
+
+  <div id="message"></div>
+
+  <div class="card">
+    <h2>Créer un post</h2>
+    <form id="createForm">
+      <div class="form-group">
+        <label for="title">Titre</label>
+        <input type="text" id="title" name="title" required placeholder="Entrez le titre">
+      </div>
+      <div class="form-group">
+        <label for="body">Contenu</label>
+        <textarea id="body" name="body" rows="4" required placeholder="Entrez le contenu"></textarea>
+      </div>
+      <button type="submit">Créer le post</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Liste des posts</h2>
+    <ul id="postsList">
+      <!-- Les posts seront injectés ici par JavaScript -->
+    </ul>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api/posts';
+    const postsList = document.getElementById('postsList');
+    const messageEl = document.getElementById('message');
+
+    function showMessage(text, type = 'success') {
+      messageEl.textContent = text;
+      messageEl.className = type === 'success' ? 'success' : 'error';
+      messageEl.style.display = 'block';
+      setTimeout(() => { messageEl.style.display = 'none'; }, 5000);
+    }
+
+    async function fetchPosts() {
+      try {
+        const res = await fetch(API_BASE);
+        const posts = await res.json();
+        renderPosts(posts);
+      } catch (err) {
+        showMessage('Impossible de charger les posts : ' + err.message, 'error');
+      }
+    }
+
+    function renderPosts(posts) {
+      postsList.innerHTML = '';
+
+      if (posts.length === 0) {
+        postsList.innerHTML = '<li style="text-align:center;color:#888;padding:20px;">Aucun post pour le moment.</li>';
+        return;
+      }
+
+      posts.forEach((post) => {
+        const li = document.createElement('li');
+        li.className = 'post-item';
+        li.innerHTML = `
+          <div class="post-meta">ID #${post.id}</div>
+          <div class="post-title">${escapeHtml(post.title)}</div>
+          <div class="post-body">${escapeHtml(post.body)}</div>
+          <div class="actions">
+            <button type="button" class="secondary" onclick="editPost(${post.id})">Modifier</button>
+            <button type="button" class="danger" onclick="deletePost(${post.id})">Supprimer</button>
+          </div>
+          <div id="edit-${post.id}" class="edit-form">
+            <form onsubmit="updatePost(event, ${post.id})">
+              <label>Nouveau titre</label>
+              <input type="text" name="title" value="${escapeHtml(post.title)}" required>
+              <label>Nouveau contenu</label>
+              <textarea name="body" rows="3" required>${escapeHtml(post.body)}</textarea>
+              <button type="submit" class="secondary">Enregistrer</button>
+              <button type="button" class="secondary" onclick="cancelEdit(${post.id})">Annuler</button>
+            </form>
+          </div>
+        `;
+        postsList.appendChild(li);
+      });
+    }
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const body = document.getElementById('body').value;
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, body }),
+        });
+
+        if (!res.ok) throw new Error('Erreur lors de la création');
+
+        document.getElementById('createForm').reset();
+        showMessage('Post créé avec succès !');
+        fetchPosts();
+      } catch (err) {
+        showMessage(err.message, 'error');
+      }
+    });
+
+    async function deletePost(id) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer ce post ?')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Erreur lors de la suppression');
+        showMessage('Post supprimé !');
+        fetchPosts();
+      } catch (err) {
+        showMessage(err.message, 'error');
+      }
+    }
+
+    function editPost(id) {
+      const form = document.getElementById(`edit-${id}`);
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function cancelEdit(id) {
+      document.getElementById(`edit-${id}`).style.display = 'none';
+    }
+
+    async function updatePost(e, id) {
+      e.preventDefault();
+      const form = e.target;
+      const title = form.elements['title'].value;
+      const body = form.elements['body'].value;
+
+      try {
+        const res = await fetch(`${API_BASE}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, body }),
+        });
+
+        if (!res.ok) throw new Error('Erreur lors de la mise à jour');
+
+        cancelEdit(id);
+        showMessage('Post mis à jour !');
+        fetchPosts();
+      } catch (err) {
+        showMessage(err.message, 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Chargement initial
+    fetchPosts();
+  </script>
+
+</body>
+</html>
